@@ -5,7 +5,16 @@ import kotlinx.serialization.json.Json
 import java.net.URL
 import java.util.*
 
+/**
+ * Object responsible for receiving information for updating applications from the server.
+ */
 object Updater {
+    /**
+     * Get the new application version tag from the server.
+     *
+     * For various failures it should also return null, because in all apps, failure behavior is similar
+     * to behavior when there is no new version.
+     */
     fun getNewVersionTag(
         product: String,
         platform: Platform,
@@ -17,7 +26,6 @@ object Updater {
 
         /* Get data from file on the remote server */
         val jsonData: String
-
         try {
             val scanner = Scanner(source.openStream()).useDelimiter("\\Z")
             jsonData = scanner.next()
@@ -28,7 +36,6 @@ object Updater {
 
         /* Parse the received data */
         val appChannelData: AppChannelData
-
         try {
             val json = Json { ignoreUnknownKeys = true }
             appChannelData = json.decodeFromString<AppChannelData>(jsonData)
@@ -46,6 +53,9 @@ object Updater {
         return if (isVersionHigher(currentVerTag, candidateVerTag)) candidateVerTag else null
     }
 
+    /**
+     * Get link to download the application of the specified version (or the latest one) from the server.
+     */
     fun getDownloadLink(
         product: String,
         platform: Platform,
@@ -55,14 +65,13 @@ object Updater {
 
         val source = URL("""https://ladsers.com/updatelink/$product-${platform.key}/""")
 
-
+        /* Get the tag if it is missing and required */
         val versionTag =
             if (channel == Channel.CHECK) null else verTag ?: getNewVersionTag(product, platform, null, channel)
             ?: return null
 
         /* Get data from file on the remote server */
         val jsonData: String
-
         try {
             val scanner = Scanner(source.openStream()).useDelimiter("\\Z")
             jsonData = scanner.next()
@@ -73,7 +82,6 @@ object Updater {
 
         /* Parse the received data */
         val appChannelData: AppChannelData
-
         try {
             val json = Json { ignoreUnknownKeys = true }
             appChannelData = json.decodeFromString<AppChannelData>(jsonData)
@@ -88,6 +96,10 @@ object Updater {
         }
     }
 
+    /**
+     * Is the candidate tag higher than the current tag?
+     * @return True, if higher. False, if equal or lower.
+     */
     @Throws(NumberFormatException::class, IllegalArgumentException::class)
     fun isVersionHigher(
         currentVerTag: String?,
@@ -102,6 +114,7 @@ object Updater {
         val currentParsed = parseTag(currentVerTag)
         val candidateParsed = parseTag(candidateVerTag)
 
+        // Tags should have the following format: year.month.number
         if (currentParsed.size != 3 || candidateParsed.size != 3) throw IllegalArgumentException()
 
         fun compare(current: Int, candidate: Int): Boolean? {
