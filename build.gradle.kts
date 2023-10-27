@@ -1,6 +1,6 @@
 plugins {
     kotlin("jvm") version "1.8.0"
-    application
+    kotlin("plugin.serialization") version "1.8.0"
 }
 
 group = "com.ladsers.web"
@@ -11,17 +11,9 @@ repositories {
 }
 
 dependencies {
-    testImplementation(kotlin("test"))
-}
-
-tasks.test {
-    useJUnitPlatform()
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0")
 }
 
 kotlin {
     jvmToolchain(11)
-}
-
-application {
-    mainClass.set("MainKt")
 }

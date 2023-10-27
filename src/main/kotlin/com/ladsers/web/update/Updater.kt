@@ -1,5 +1,10 @@
 package com.ladsers.web.update
 
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
+import java.net.URL
+import java.util.*
+
 object Updater {
     fun getNewVersionTag(
         product: String,
@@ -7,7 +12,38 @@ object Updater {
         currentVerTag: String? = null,
         channel: Channel = Channel.STABLE
     ): String? {
-        return null //todo
+
+        val source = URL("""https://ladsers.com/checkupdate/$product-${platform.key}/""")
+
+        /* Get data from file on the remote server */
+        val jsonData: String
+
+        try {
+            val scanner = Scanner(source.openStream()).useDelimiter("\\Z")
+            jsonData = scanner.next()
+            scanner.close()
+        } catch (e: Exception) {
+            return null
+        }
+
+        /* Parse the received data */
+        val appChannelData: AppChannelData
+
+        try {
+            val json = Json { ignoreUnknownKeys = true }
+            appChannelData = json.decodeFromString<AppChannelData>(jsonData)
+        } catch (e: Exception) {
+            return null
+        }
+
+        /* Get the version tag */
+        val candidateVerTag = when (channel) {
+            Channel.STABLE -> appChannelData.stable
+            Channel.CHECK -> appChannelData.check
+        }
+
+        /* Compare tags */
+        return if (isVersionHigher(currentVerTag, candidateVerTag)) candidateVerTag else null
     }
 
     fun getDownloadLink(
@@ -17,9 +53,39 @@ object Updater {
         channel: Channel = Channel.STABLE
     ): String? {
 
-        val versionTag = verTag ?: getNewVersionTag(product, platform, null, channel) ?: return null
+        val source = URL("""https://ladsers.com/updatelink/$product-${platform.key}/""")
 
-        return null //todo
+
+        val versionTag =
+            if (channel == Channel.CHECK) null else verTag ?: getNewVersionTag(product, platform, null, channel)
+            ?: return null
+
+        /* Get data from file on the remote server */
+        val jsonData: String
+
+        try {
+            val scanner = Scanner(source.openStream()).useDelimiter("\\Z")
+            jsonData = scanner.next()
+            scanner.close()
+        } catch (e: Exception) {
+            return null
+        }
+
+        /* Parse the received data */
+        val appChannelData: AppChannelData
+
+        try {
+            val json = Json { ignoreUnknownKeys = true }
+            appChannelData = json.decodeFromString<AppChannelData>(jsonData)
+        } catch (e: Exception) {
+            return null
+        }
+
+        /* Get the version tag */
+        return when (channel) {
+            Channel.STABLE -> appChannelData.stable?.replace("%version%", versionTag!!)
+            Channel.CHECK -> appChannelData.check
+        }
     }
 
     @Throws(NumberFormatException::class, IllegalArgumentException::class)
