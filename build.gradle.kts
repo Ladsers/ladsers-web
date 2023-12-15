@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.ladsers.web"
-version = "23.10.0"
+version = "23.12.0"
 
 repositories {
     mavenCentral()

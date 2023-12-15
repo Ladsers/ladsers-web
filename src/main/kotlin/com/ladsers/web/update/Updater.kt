@@ -15,7 +15,7 @@ object Updater {
      * For various failures it should also return null, because in all apps, failure behavior is similar
      * to behavior when there is no new version.
      */
-    fun getNewVersionTag(
+    suspend fun getNewVersionTag(
         product: String,
         platform: Platform,
         currentVerTag: String? = null,
@@ -56,7 +56,7 @@ object Updater {
     /**
      * Get link to download the application of the specified version (or the latest one) from the server.
      */
-    fun getDownloadLink(
+    suspend fun getDownloadLink(
         product: String,
         platform: Platform,
         verTag: String? = null,
